@@ -997,8 +997,9 @@ function renderTagCloud() {
     el.innerHTML = '<span class="tag-cloud-label">Tagy:</span><span style="color:rgba(245,242,236,0.35);font-size:11px">Dosud nebyl žádný tag vytvořen</span>';
     return;
   }
+  const sorted = [...allTags].sort((a, b) => a.localeCompare(b));
   el.innerHTML = '<span class="tag-cloud-label">Tagy:</span>' +
-    allTags.map(t => `<span class="tag-pill ${activeTags.has(t) ? 'active' : ''}" onclick="toggleTagPill('${esc(t)}')">${esc(t)}</span>`).join('');
+    sorted.map(t => `<span class="tag-pill ${activeTags.has(t) ? 'active' : ''}" onclick="toggleTagPill('${esc(t)}')">${esc(t)}</span>`).join('');
 }
 
 function toggleTagPill(tag) {
@@ -1144,7 +1145,7 @@ function renderTagsAdmin() {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:8px">Zatím není žádný tag vytvořen</p>';
     return;
   }
-  el.innerHTML = allTags.map(t => `
+  el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => `
     <div class="tag-item">
       <span class="tag-name"><span class="tag-dot"></span>${esc(t)}</span>
       <button class="btn btn-sm btn-danger" onclick="deleteTag('${esc(t)}')">✕</button>
@@ -1180,7 +1181,7 @@ function renderTagSelector(selected = []) {
     el.innerHTML = '<span style="color:var(--muted);font-size:12px"><-Nejprve vytvoř tagy</span>';
     return;
   }
-  el.innerHTML = allTags.map(t => {
+   el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => {
     const on = selected.includes(t);
     return `<span class="tag-toggle ${on ? 'selected' : ''}" onclick="this.classList.toggle('selected')">${esc(t)}</span>`;
   }).join('');
