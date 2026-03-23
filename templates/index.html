@@ -1021,9 +1021,21 @@ document.getElementById('tag-search').addEventListener('keydown', e => { if (e.k
 function doSearch() {
   const val = document.getElementById('tag-search').value.trim().toUpperCase();
   if (!val) return;
-  // Add typed tag to active set
-  activeTags.add(val);
   document.getElementById('tag-search').value = '';
+
+  // Substring match: find all known tags that appear anywhere inside the scanned value.
+  // e.g. scanned "WIP-F00N211175-TW-STP" matches tag "F00N211175"
+  // Also accepts an exact tag name typed manually.
+  const matched = allTags.filter(t => val.includes(t.toUpperCase()));
+
+  if (matched.length > 0) {
+    matched.forEach(t => activeTags.add(t));
+  } else {
+    // Nothing matched — treat the whole value as a literal tag anyway
+    // (handles manually typed tags not yet in the list)
+    activeTags.add(val);
+  }
+
   renderTagCloud();
   runSearch();
 }
