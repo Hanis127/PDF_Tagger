@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMC Doc Tagger</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f2ec;
+  --surface: #ffffff;
+  --surface2: #ede9e0;
+  --border: #d8d2c5;
+  --accent: #1a1a2e;
+  --accent-alt: #c84b31;
+  --text: #1a1a2e;
+  --muted: #8a8478;
+  --success: #2d7a4f;
+  --danger: #c84b31;
+  --radius: 4px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Syne', sans-serif;
+  --shadow: 0 2px 12px rgba(26,26,46,0.08);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  min-height: 100vh;
+}
+
+/* grain */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--accent);
+  color: #f5f2ec;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.logo {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.logo-tag {
+  background: var(--accent-alt);
+  color: #fff;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 400;
+  padding: 2px 8px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.header-nav { display: flex; gap: 6px; }
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-ghost { background: transparent; border-color: rgba(245,242,236,0.2); color: rgba(245,242,236,0.7); }
+.btn-ghost:hover { border-color: rgba(245,242,236,0.6); color: #f5f2ec; }
+.btn-primary { background: var(--accent-alt); color: #fff; border-color: var(--accent-alt); }
+.btn-primary:hover { background: #b03e27; }
+.btn-outline { background: transparent; border-color: var(--border); color: var(--muted); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 10px; }
+.btn:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+
+/* ── SCREENS ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ══════════════════════════════════════════
+   USER SCREEN
+══════════════════════════════════════════ */
+#user-screen {
+  display: none;
+  height: calc(100vh - 60px);
+  flex-direction: column;
+}
+#user-screen.active { display: flex; }
+
+/* Top bar: search + tags all in one compact strip */
+.user-topbar {
+  background: var(--accent);
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.user-topbar-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.search-input {
+  background: rgba(245,242,236,0.1);
+  border: 1px solid rgba(245,242,236,0.25);
+  color: #f5f2ec;
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  outline: none;
+  letter-spacing: 1px;
+  transition: border-color 0.15s, background 0.15s;
+  width: 220px;
+}
+.search-input::placeholder { color: rgba(245,242,236,0.35); font-size: 12px; letter-spacing: 0.3px; }
+.search-input:focus { border-color: var(--accent-alt); background: rgba(245,242,236,0.15); }
+
+.topbar-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(245,242,236,0.15);
+  flex-shrink: 0;
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+}
+
+.tag-cloud-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(245,242,236,0.4);
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+.tag-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(245,242,236,0.2);
+  background: transparent;
+  color: rgba(245,242,236,0.6);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: var(--mono);
+  user-select: none;
+}
+.tag-pill:hover { border-color: rgba(245,242,236,0.6); color: #f5f2ec; }
+.tag-pill.active { border-color: var(--accent-alt); color: #fff; background: var(--accent-alt); }
+
+/* Active tags summary bar */
+.active-tags-bar {
+  display: none;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 24px;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.active-tags-bar.visible { display: flex; }
+.active-tags-bar-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.active-tags-bar .count-badge {
+  background: var(--accent);
+  color: #f5f2ec;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.active-tags-bar .clear-btn {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  transition: color 0.15s;
+}
+.active-tags-bar .clear-btn:hover { color: var(--danger); }
+
+/* Results list — scrollable left panel when a doc is open */
+.user-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.doc-list-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: width 0.2s;
+  width: 100%;
+}
+.doc-list-panel.has-open { width: 320px; }
+
+.doc-list { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+
+.doc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.doc-card:hover { border-color: var(--accent); }
+.doc-card.active { border-color: var(--accent-alt); box-shadow: 0 0 0 2px rgba(200,75,49,0.15); }
+
+.doc-card-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 14px;
+  user-select: none;
+}
+
+.doc-icon {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  color: #f5f2ec;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.doc-card.active .doc-icon { background: var(--accent-alt); }
+
+.doc-card-info { flex: 1; min-width: 0; }
+.doc-card-name { font-family: var(--sans); font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+
+.tag-chip {
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.tag-chip.match { border-color: var(--accent-alt); color: var(--accent-alt); background: rgba(200,75,49,0.06); }
+
+/* Full screen PDF viewer panel */
+.pdf-viewer-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #525659;
+}
+
+.pdf-viewer-panel.empty {
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.pdf-empty-hint {
+  text-align: center;
+  color: var(--muted);
+}
+.pdf-empty-hint .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.2; }
+.pdf-empty-hint p { font-size: 13px; }
+
+.pdf-viewer-panel iframe {
+  flex: 1;
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  width: 100%;
+}
+.empty-icon { font-size: 52px; margin-bottom: 16px; opacity: 0.3; }
+.empty-state h3 { font-family: var(--sans); font-weight: 600; font-size: 18px; color: var(--text); margin-bottom: 8px; }
+.empty-state p { font-size: 12px; }
+
+.search-hint {
+  font-size: 11px;
+  color: rgba(245,242,236,0.35);
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════
+   ADMIN SCREEN
+══════════════════════════════════════════ */
+#admin-screen {
+  display: none;
+  padding: 32px 40px;
+  min-height: calc(100vh - 60px);
+  background: var(--bg);
+}
+#admin-screen.active { display: block; }
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  max-width: 1200px;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-head {
+  padding: 13px 18px;
+  background: var(--accent);
+  color: #f5f2ec;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-head .sub { font-family: var(--mono); font-size: 11px; color: rgba(245,242,236,0.5); font-weight: 400; }
+
+.panel-body { padding: 18px; }
+
+/* Fields */
+.field-group { margin-bottom: 14px; }
+.field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; display: block; }
+.field {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field:focus { border-color: var(--accent); }
+.field.error { border-color: var(--danger); }
+
+.path-row { display: flex; gap: 6px; }
+.path-row .field { flex: 1; }
+
+/* Tag admin list */
+.tag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  margin-bottom: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: border-color 0.15s;
+}
+.tag-item:hover { border-color: var(--accent); }
+.tag-name { font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.tag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-alt); flex-shrink: 0; }
+
+/* Doc form */
+.tag-selector { display: flex; flex-wrap: wrap; gap: 7px; }
+.tag-toggle {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+.tag-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.tag-toggle.selected { border-color: var(--accent-alt); color: var(--accent-alt); background: rgba(200,75,49,0.07); }
+
+/* Doc admin table */
+.doc-table { width: 100%; border-collapse: collapse; }
+.doc-table th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+.doc-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  vertical-align: middle;
+}
+.doc-table tr:last-child td { border-bottom: none; }
+.doc-table tr:hover td { background: var(--bg); }
+
+.doc-table .doc-name-cell { font-family: var(--sans); font-weight: 600; font-size: 13px; }
+.doc-table .doc-path-cell { color: var(--muted); font-size: 11px; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.actions-cell { display: flex; gap: 5px; justify-content: flex-end; }
+
+/* ── MODAL ── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,46,0.6);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 36px;
+  width: 380px;
+  box-shadow: 0 20px 60px rgba(26,26,46,0.25);
+  text-align: center;
+}
+
+.modal-logo {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--accent);
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+.modal-sub { color: var(--muted); font-size: 12px; margin-bottom: 28px; }
+
+.modal .field {
+  text-align: center;
+  letter-spacing: 3px;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.modal-err { color: var(--danger); font-size: 11px; min-height: 16px; margin-bottom: 10px; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--accent);
+  color: #f5f2ec;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 11px 22px;
+  border-radius: 20px;
+  z-index: 8000;
+  opacity: 0;
+  transition: all 0.2s;
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.err { background: var(--danger); }
+
+/* ── DIVIDER ── */
+hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── PATH HELP ── */
+.path-help {
+  background: rgba(26,26,46,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+.path-help code {
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-family: var(--mono);
+  color: var(--text);
+  font-size: 11px;
+}
+
+.edit-mode-banner {
+  background: rgba(200,75,49,0.1);
+  border: 1px solid var(--accent-alt);
+  color: var(--accent-alt);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 11px;
+  margin-bottom: 14px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+}
+.edit-mode-banner.visible { display: flex; }
+/* ── FILE BROWSER ── */
+.browse-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.browse-selected {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.browse-selected.has-file { color: var(--text); border-color: var(--success); }
+.browse-selected.has-file .browse-icon { opacity: 1; }
+.browse-icon { flex-shrink: 0; opacity: 0.4; }
+.browse-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.browser-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 680px;
+  max-width: 95vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(26,26,46,0.3);
+  overflow: hidden;
+}
+
+.browser-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--accent);
+  color: #f5f2ec;
+  gap: 12px;
+}
+
+.browser-path-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.browser-current-path {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: rgba(245,242,236,0.65);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-up-btn {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.browser-up-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+.browser-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.browser-loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.browser-empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.browser-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.1s;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+  user-select: none;
+}
+.browser-entry:hover { background: var(--bg); border-color: var(--border); }
+.browser-entry.selected { background: rgba(200,75,49,0.07); border-color: var(--accent-alt); }
+
+.browser-entry-icon { font-size: 16px; flex-shrink: 0; }
+.browser-entry-name { font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.browser-entry-type { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+.browser-entry.dir .browser-entry-name { color: var(--text); font-weight: 500; }
+.browser-entry.pdf .browser-entry-name { color: var(--accent); }
+
+.browser-foot {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+}
+
+.browser-selection {
+  font-size: 12px;
+  color: var(--muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.browser-selection.has-file { color: var(--accent-alt); font-weight: 500; }
+
+.browser-search-bar {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.browser-search-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.browser-search-input:focus { border-color: var(--accent); }
+
+.browser-entry .browser-entry-rel {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: right;
+  padding-left: 8px;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    DMC Doc Tagger
+    <!-- <span class="logo-tag">v1</span> -->
+  </div>
+  <div class="header-nav">
+    <button class="btn btn-ghost" id="nav-user" onclick="showUser()">📄 Zobrazit dokumenty</button>
+    <button class="btn btn-ghost" id="nav-admin" onclick="openAdminGate()">⚙ Admin</button>
+  </div>
+</header>
+
+<!-- ════════════ USER SCREEN ════════════ -->
+<div id="user-screen" class="screen active">
+  <!-- Top bar: search input + tag pills all in one line -->
+  <div class="user-topbar">
+    <div class="user-topbar-search">
+      <input type="text" class="search-input" id="tag-search" placeholder="Naskenujte, nebo vyberte tag" autocomplete="on" autofocus>
+      <button class="btn btn-primary" onclick="doSearch()">VYBER</button>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="tag-cloud" id="tag-cloud">
+      <span class="tag-cloud-label">Tagy:</span>
+    </div>
+  </div>
+
+  <!-- Active tag summary + clear -->
+  <div class="active-tags-bar" id="active-tags-bar">
+    <span class="active-tags-bar-label">Vybráno:</span>
+    <span id="active-tags-list"></span>
+    <span class="count-badge" id="results-count">0</span>
+    <button class="clear-btn" onclick="clearSearch()">✕ Vyčistit</button>
+  </div>
+
+  <!-- Body: doc list (left) + PDF viewer (right, full height) -->
+  <div class="user-body">
+    <div class="doc-list-panel" id="doc-list-panel">
+      <div id="doc-list"></div>
+    </div>
+    <div class="pdf-viewer-panel empty" id="pdf-viewer-panel">
+      <div class="pdf-empty-hint">
+        <div class="icon">📄</div>
+        <p>Select a document to view it</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ ADMIN SCREEN ════════════ -->
+<div id="admin-screen" class="screen">
+  <div class="admin-layout">
+
+    <!-- LEFT: Tag manager -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          Správa tagů
+          <span class="sub" id="tag-count-lbl">0 tag(y)</span>
+        </div>
+        <div class="panel-body">
+          <div class="field-group">
+            <label class="field-label">NOVÝ TAG</label>
+            <div style="display:flex;gap:6px">
+              <input type="text" class="field" id="new-tag" placeholder="např. Part Number" maxlength="40" onkeydown="if(event.key==='Enter')createTag()">
+              <button class="btn btn-primary" onclick="createTag()">Přidej</button>
+            </div>
+          </div>
+          <hr>
+          <div id="tag-list-admin"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Doc manager -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+      <!-- Add/Edit form -->
+      <div class="panel">
+        <div class="panel-head">
+          <span id="form-title">Klasifukuj dokument</span>
+          <span class="sub" id="form-subtitle"></span>
+        </div>
+        <div class="panel-body">
+          <div class="edit-mode-banner" id="edit-banner">
+            <span>✏ Editace dokumentu — zanechte prázdnou cestu pro zachování původního dokumentu</span>
+            <button class="btn btn-sm btn-outline" onclick="cancelEdit()" style="border-color:var(--accent-alt);color:var(--accent-alt)">Zrušit</button>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Název dokumentu (název zobrazení)</label>
+            <input type="text" class="field" id="doc-name" placeholder="např. WIP-28501899-BG">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">PDF soubor (network share)</label>
+            <div class="browse-row">
+              <div class="browse-selected" id="browse-selected">
+                <span class="browse-icon">📄</span>
+                <span class="browse-text" id="browse-text">Není vybrán žádný soubor</span>
+              </div>
+              <button class="btn btn-outline" type="button" onclick="openBrowser()">📁 VYBER…</button>
+            </div>
+            <input type="hidden" id="doc-path">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Přiřaď tagy</label>
+            <div class="tag-selector" id="tag-selector">
+              <span style="color:var(--muted);font-size:12px">Nejprve vytvoř tag →</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button class="btn btn-primary" onclick="saveDoc()">Uložit dokument</button>
+            <button class="btn btn-outline btn-sm" onclick="cancelEdit()" id="cancel-btn" style="display:none">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doc list -->
+      <div class="panel">
+        <div class="panel-head">
+          Dokumenty
+          <span class="sub" id="doc-count-lbl">0 dokumentů</span>
+        </div>
+        <div class="panel-body" id="doc-table-wrap">
+          <div class="empty-state" style="padding:30px 0">
+            <div class="empty-icon" style="font-size:32px">📂</div>
+            <p>Žádný dokument zatím nebyl klasifikován</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ FILE BROWSER MODAL ════════════ -->
+<div class="overlay" id="browser-overlay">
+  <div class="browser-modal">
+    <div class="browser-head">
+      <div class="browser-path-bar">
+        <button class="btn btn-ghost browser-up-btn" id="browser-up" onclick="browseUp()" disabled title="Go up">↑ Up</button>
+        <span class="browser-current-path" id="browser-current-path">Loading…</span>
+      </div>
+      <button class="btn btn-ghost" onclick="closeBrowser()" style="flex-shrink:0">✕</button>
+    </div>
+    <div class="browser-search-bar">
+      <input type="text" class="browser-search-input" id="browser-search" placeholder="🔍  Vyhledej název souboru" oninput="onBrowserSearch(this.value)">
+    </div>
+    <div class="browser-body" id="browser-body">
+      <div class="browser-loading">Loading…</div>
+    </div>
+    <div class="browser-foot">
+      <div class="browser-selection" id="browser-selection">Není vybrán žádný soubor</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="closeBrowser()">ZRUŠIT</button>
+        <button class="btn btn-primary" id="browser-select-btn" onclick="confirmBrowse()" disabled>VYBER SOUBOR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ LOGIN MODAL ════════════ -->
+<div class="overlay" id="login-overlay">
+  <div class="modal">
+    <div class="modal-logo">DMC Doc Tagger</div>
+    <div class="modal-sub">Zadej admin heslo</div>
+    <input type="password" class="field" id="login-pw" placeholder="Heslo" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="modal-err" id="login-err"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">Vstoupit jako admin</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────
+let adminUnlocked = false;
+let editingId = null;
+let allTags = [];
+let allDocs = [];
+
+// ── TOAST ──────────────────────────────────────
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3000);
+}
+
+// ── API HELPERS ────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ── AUTH ───────────────────────────────────────
+function openAdminGate() {
+  if (adminUnlocked) { showAdmin(); return; }
+  document.getElementById('login-overlay').classList.add('open');
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-err').textContent = '';
+  setTimeout(() => document.getElementById('login-pw').focus(), 80);
+}
+
+async function doLogin() {
+  const pw = document.getElementById('login-pw').value;
+  try {
+    await api('POST', '/api/login', { password: pw });
+    adminUnlocked = true;
+    document.getElementById('login-overlay').classList.remove('open');
+    showAdmin();
+  } catch(e) {
+    document.getElementById('login-err').textContent = 'Nesprávné heslo';
+    document.getElementById('login-pw').value = '';
+    document.getElementById('login-pw').focus();
+  }
+}
+
+document.getElementById('login-overlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+// ── SCREENS ────────────────────────────────────
+function showUser() {
+  document.getElementById('user-screen').classList.add('active');
+  document.getElementById('admin-screen').classList.remove('active');
+  loadTags();
+}
+
+function showAdmin() {
+  document.getElementById('user-screen').classList.remove('active');
+  document.getElementById('admin-screen').classList.add('active');
+  loadAdminData();
+}
+
+// ── TAGS LOAD ──────────────────────────────────
+let activeTags = new Set();
+
+async function loadTags() {
+  allTags = await api('GET', '/api/tags');
+  renderTagCloud();
+}
+
+function renderTagCloud() {
+  const el = document.getElementById('tag-cloud');
+  if (!allTags.length) {
+    el.innerHTML = '<span class="tag-cloud-label">Tagy:</span><span style="color:rgba(245,242,236,0.35);font-size:11px">Dosud nebyl žádný tag vytvořen</span>';
+    return;
+  }
+  el.innerHTML = '<span class="tag-cloud-label">Tagy:</span>' +
+    allTags.map(t => `<span class="tag-pill ${activeTags.has(t) ? 'active' : ''}" onclick="toggleTagPill('${esc(t)}')">${esc(t)}</span>`).join('');
+}
+
+function toggleTagPill(tag) {
+  if (activeTags.has(tag)) {
+    activeTags.delete(tag);
+  } else {
+    activeTags.add(tag);
+  }
+  renderTagCloud();
+  if (activeTags.size > 0) {
+    runSearch();
+  } else {
+    clearSearch();
+  }
+}
+
+// ── SEARCH ─────────────────────────────────────
+document.getElementById('tag-search').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+function doSearch() {
+  const val = document.getElementById('tag-search').value.trim().toUpperCase();
+  if (!val) return;
+  // Add typed tag to active set
+  activeTags.add(val);
+  document.getElementById('tag-search').value = '';
+  renderTagCloud();
+  runSearch();
+}
+
+async function runSearch() {
+  const tags = [...activeTags];
+  if (!tags.length) return;
+
+  // Fetch docs for all active tags in parallel, then union results
+  const results = await Promise.all(tags.map(t => api('GET', `/api/search?tag=${encodeURIComponent(t)}`)));
+  const seen = new Set();
+  const docs = [];
+  for (const batch of results) {
+    for (const doc of batch) {
+      if (!seen.has(doc.id)) { seen.add(doc.id); docs.push(doc); }
+    }
+  }
+
+  // Update active bar
+  const bar = document.getElementById('active-tags-bar');
+  bar.classList.add('visible');
+  document.getElementById('active-tags-list').innerHTML = tags.map(t =>
+    `<span class="tag-chip match" style="font-size:11px;padding:3px 8px">${esc(t)}</span>`
+  ).join(' ');
+  document.getElementById('results-count').textContent = docs.length + ' doc' + (docs.length !== 1 ? 's' : '');
+
+  const list = document.getElementById('doc-list');
+  const panel = document.getElementById('doc-list-panel');
+
+  if (!docs.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h3>Dokument nenalezen</h3>
+      <p>Žádný dokument nemá přidělen tento tag</p>
+    </div>`;
+    panel.classList.remove('has-open');
+    showPdfHint();
+    return;
+  }
+
+  list.innerHTML = `<div class="doc-list">${docs.map(doc => `
+    <div class="doc-card" id="card-${doc.id}" onclick="openDoc('${doc.id}')">
+      <div class="doc-card-header">
+        <div class="doc-icon">PDF</div>
+        <div class="doc-card-info">
+          <div class="doc-card-name">${esc(doc.name)}</div>
+          <div class="doc-card-tags">${doc.tags.map(t =>
+            `<span class="tag-chip ${activeTags.has(t.toUpperCase()) ? 'match' : ''}">${esc(t)}</span>`
+          ).join('')}</div>
+        </div>
+      </div>
+    </div>
+  `).join('')}</div>`;
+
+  // Auto-open first doc
+  if (docs.length > 0) openDoc(docs[0].id);
+}
+
+let openDocId = null;
+function openDoc(id) {
+  openDocId = id;
+  document.querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('card-' + id);
+  if (card) card.classList.add('active');
+
+  const panel = document.getElementById('pdf-viewer-panel');
+  const listPanel = document.getElementById('doc-list-panel');
+  panel.classList.remove('empty');
+  listPanel.classList.add('has-open');
+  panel.innerHTML = `<iframe src="/pdf/${id}" title="Document"></iframe>`;
+}
+
+function showPdfHint() {
+  const panel = document.getElementById('pdf-viewer-panel');
+  panel.classList.add('empty');
+  panel.innerHTML = `<div class="pdf-empty-hint"><div class="icon">📄</div><p>Select a document to view it</p></div>`;
+}
+
+function clearSearch() {
+  activeTags.clear();
+  openDocId = null;
+  document.getElementById('tag-search').value = '';
+  document.getElementById('active-tags-bar').classList.remove('visible');
+  document.getElementById('doc-list').innerHTML = '';
+  document.getElementById('doc-list-panel').classList.remove('has-open');
+  showPdfHint();
+  renderTagCloud();
+}
+
+// ── ADMIN DATA ─────────────────────────────────
+async function loadAdminData() {
+  [allTags, allDocs] = await Promise.all([
+    api('GET', '/api/tags'),
+    api('GET', '/api/docs')
+  ]);
+  renderTagsAdmin();
+  renderTagSelector();
+  renderDocsTable();
+}
+
+// ── TAGS ADMIN ─────────────────────────────────
+function renderTagsAdmin() {
+  document.getElementById('tag-count-lbl').textContent = allTags.length + ' tag' + (allTags.length !== 1 ? 'y' : '');
+  const el = document.getElementById('tag-list-admin');
+  if (!allTags.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:8px">Zatím není žádný tag vytvořen</p>';
+    return;
+  }
+  el.innerHTML = allTags.map(t => `
+    <div class="tag-item">
+      <span class="tag-name"><span class="tag-dot"></span>${esc(t)}</span>
+      <button class="btn btn-sm btn-danger" onclick="deleteTag('${esc(t)}')">✕</button>
+    </div>
+  `).join('');
+}
+
+async function createTag() {
+  const input = document.getElementById('new-tag');
+  const name = input.value.trim().toUpperCase();
+  if (!name) return;
+  try {
+    await api('POST', '/api/tags', { name });
+    input.value = '';
+    toast('Tag created: ' + name);
+    loadAdminData();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function deleteTag(name) {
+  if (!confirm(`Delete tag "${name}"?\nIt will be removed from all documents.`)) return;
+  try {
+    await api('DELETE', `/api/tags/${encodeURIComponent(name)}`);
+    toast('Tag deleted');
+    loadAdminData();
+  } catch(e) { toast(e.message, true); }
+}
+
+// ── TAG SELECTOR ───────────────────────────────
+function renderTagSelector(selected = []) {
+  const el = document.getElementById('tag-selector');
+  if (!allTags.length) {
+    el.innerHTML = '<span style="color:var(--muted);font-size:12px"><-Nejprve vytvoř tagy</span>';
+    return;
+  }
+  el.innerHTML = allTags.map(t => {
+    const on = selected.includes(t);
+    return `<span class="tag-toggle ${on ? 'selected' : ''}" onclick="this.classList.toggle('selected')">${esc(t)}</span>`;
+  }).join('');
+}
+
+function selectedTags() {
+  return [...document.querySelectorAll('.tag-toggle.selected')].map(el => el.textContent);
+}
+
+// ── DOCS ADMIN ─────────────────────────────────
+function renderDocsTable() {
+  document.getElementById('doc-count-lbl').textContent = allDocs.length + ' dokument' + (allDocs.length !== 1 ? 'y' : '');
+  const wrap = document.getElementById('doc-table-wrap');
+  if (!allDocs.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:30px 0"><div class="empty-icon" style="font-size:32px">📂</div><p>Žádný dokument dosud nebyl otagován</p></div>';
+    return;
+  }
+  wrap.innerHTML = `<table class="doc-table">
+    <thead><tr>
+      <th>Name</th><th>Path</th><th>Tags</th><th></th>
+    </tr></thead>
+    <tbody>${allDocs.map(d => `
+      <tr>
+        <td class="doc-name-cell">${esc(d.name)}</td>
+        <td class="doc-path-cell" title="${esc(d.path || '')}">${esc(d.filename || '—')}</td>
+        <td>${d.tags.map(t => `<span class="tag-chip">${esc(t)}</span>`).join(' ')}</td>
+        <td><div class="actions-cell">
+          <button class="btn btn-sm btn-outline" onclick="editDoc('${d.id}')">Uprav</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteDoc('${d.id}')">SMAŽ</button>
+        </div></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function saveDoc() {
+  const name = document.getElementById('doc-name').value.trim();
+  const path = document.getElementById('doc-path').value.trim();
+  const tags = selectedTags();
+
+  if (!name) { toast('Zadejte název dokumentu', true); return; }
+
+  try {
+    if (editingId) {
+      await api('PUT', `/api/docs/${editingId}`, { name, path, tags });
+      toast('Dokument byl aktualizován');
+      cancelEdit();
+    } else {
+      if (!path) { toast('Zadejte cestu k dokumentu', true); return; }
+      await api('POST', '/api/docs', { name, path, tags });
+      toast('Dokument byl přidán');
+      resetForm();
+    }
+    loadAdminData();
+  } catch(e) { toast(e.message, true); }
+}
+
+function editDoc(id) {
+  const doc = allDocs.find(d => d.id === id);
+  if (!doc) return;
+  editingId = id;
+  document.getElementById('doc-name').value = doc.name;
+  // Show current file in browse UI but allow re-selection
+  document.getElementById('browse-selected').classList.add('has-file');
+  document.getElementById('browse-text').textContent = doc.path
+    ? `Current: ${doc.filename || doc.path} — click Browse to change`
+    : 'No file — click Browse to select';
+  document.getElementById('doc-path').value = ''; // clear so PUT keeps existing if not changed
+  document.getElementById('form-title').textContent = 'Edit Document';
+  document.getElementById('edit-banner').classList.add('visible');
+  document.getElementById('cancel-btn').style.display = '';
+  renderTagSelector(doc.tags);
+  document.getElementById('admin-screen').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingId = null;
+  resetForm();
+}
+
+function resetForm() {
+  editingId = null;
+  document.getElementById('doc-name').value = '';
+  document.getElementById('doc-path').value = '';
+  document.getElementById('form-title').textContent = 'Add Document';
+  document.getElementById('form-subtitle').textContent = '';
+  document.getElementById('edit-banner').classList.remove('visible');
+  document.getElementById('cancel-btn').style.display = 'none';
+  setBrowseFile(null, null);
+  renderTagSelector([]);
+}
+
+async function deleteDoc(id) {
+  if (!confirm('Chcete smazat tento dokument? (pdf soubor v úložišti NEBUDE smazán)')) return;
+  try {
+    await api('DELETE', `/api/docs/${id}`);
+    toast('Dokument byl smazán');
+    loadAdminData();
+  } catch(e) { toast(e.message, true); }
+}
+
+// ── FILE BROWSER ───────────────────────────────
+let browserSelectedPath = null;
+let browserSelectedName = null;
+let browserCurrentPath = null;
+let browserSearchTimer = null;
+
+function openBrowser() {
+  browserSelectedPath = null;
+  browserSelectedName = null;
+  document.getElementById('browser-overlay').classList.add('open');
+  document.getElementById('browser-selection').textContent = 'Není vybrán žádný soubor';
+  document.getElementById('browser-selection').classList.remove('has-file');
+  document.getElementById('browser-select-btn').disabled = true;
+  document.getElementById('browser-search').value = '';
+  browseTo(''); // start at SHARE_ROOT
+}
+
+function closeBrowser() {
+  document.getElementById('browser-overlay').classList.remove('open');
+}
+
+async function browseTo(path) {
+  browserCurrentPath = path;
+  document.getElementById('browser-search').value = '';
+  const body = document.getElementById('browser-body');
+  body.innerHTML = '<div class="browser-loading">Loading…</div>';
+
+  try {
+    const data = await api('GET', '/api/browse?path=' + encodeURIComponent(path));
+    document.getElementById('browser-current-path').textContent = data.path;
+    document.getElementById('browser-up').disabled = data.parent === null;
+    document.getElementById('browser-up')._parentPath = data.parent;
+    renderBrowserEntries(data.entries, false);
+  } catch(e) {
+    body.innerHTML = `<div class="browser-empty">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+function onBrowserSearch(val) {
+  clearTimeout(browserSearchTimer);
+  if (!val.trim()) {
+    // Back to normal browse
+    browseTo(browserCurrentPath || '');
+    return;
+  }
+  browserSearchTimer = setTimeout(() => doBrowserSearch(val.trim()), 300);
+}
+
+async function doBrowserSearch(query) {
+  const body = document.getElementById('browser-body');
+  body.innerHTML = '<div class="browser-loading">Searching…</div>';
+  document.getElementById('browser-current-path').textContent = `Search: "${query}"`;
+  document.getElementById('browser-up').disabled = true;
+
+  try {
+    const data = await api('GET', '/api/browse?search=' + encodeURIComponent(query));
+    renderBrowserEntries(data.entries, true);
+  } catch(e) {
+    body.innerHTML = `<div class="browser-empty">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+function renderBrowserEntries(entries, isSearch) {
+  const body = document.getElementById('browser-body');
+
+  if (!entries.length) {
+    body.innerHTML = `<div class="browser-empty">${isSearch ? 'No PDFs match your search' : 'No folders or PDF files here'}</div>`;
+    return;
+  }
+
+  body.innerHTML = entries.map(e => `
+    <div class="browser-entry ${e.type}"
+         data-path="${esc(e.path)}"
+         data-type="${e.type}"
+         data-name="${esc(e.name)}"
+         onclick="handleBrowserClick(this)">
+      <span class="browser-entry-icon">${e.type === 'dir' ? '📁' : '📄'}</span>
+      <span class="browser-entry-name">${esc(e.name)}</span>
+      ${isSearch && e.rel ? `<span class="browser-entry-rel" title="${esc(e.rel)}">…/${esc(e.rel.split(/[\\/]/).slice(0,-1).join('/') || '')}</span>` : `<span class="browser-entry-type">${e.type === 'dir' ? 'Folder' : 'PDF'}</span>`}
+    </div>
+  `).join('');
+}
+
+function handleBrowserClick(el) {
+  const type = el.dataset.type;
+  const path = el.dataset.path;
+  const name = el.dataset.name;
+
+  if (type === 'dir') {
+    browseTo(path);
+    return;
+  }
+
+  // PDF — select it
+  document.querySelectorAll('.browser-entry').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  browserSelectedPath = path;
+  browserSelectedName = name;
+
+  const sel = document.getElementById('browser-selection');
+  sel.textContent = path;
+  sel.classList.add('has-file');
+  document.getElementById('browser-select-btn').disabled = false;
+}
+
+function browseUp() {
+  const parent = document.getElementById('browser-up')._parentPath;
+  if (parent !== null && parent !== undefined) browseTo(parent);
+}
+
+function confirmBrowse() {
+  if (!browserSelectedPath) return;
+  setBrowseFile(browserSelectedPath, browserSelectedName);
+  closeBrowser();
+}
+
+function setBrowseFile(path, name) {
+  const hidden = document.getElementById('doc-path');
+  const selected = document.getElementById('browse-selected');
+  const text = document.getElementById('browse-text');
+
+  if (path) {
+    hidden.value = path;
+    text.textContent = path;
+    selected.classList.add('has-file');
+    // Auto-fill doc name if empty
+    if (!document.getElementById('doc-name').value && name) {
+      document.getElementById('doc-name').value = name.replace(/\.pdf$/i, '');
+    }
+  } else {
+    hidden.value = '';
+    text.textContent = 'Není vybrán žádný soubor';
+    selected.classList.remove('has-file');
+  }
+}
+
+// Close browser on overlay click
+document.getElementById('browser-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeBrowser();
+});
+
+// ── UTILS ──────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── INIT ───────────────────────────────────────
+loadTags();
+</script>
+</body>
+</html>
