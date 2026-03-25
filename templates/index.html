@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DMC Doc Tagger</title>
+<title>DMC Docs</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,12 +59,12 @@ header {
 
 .logo {
   font-family: var(--sans);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 20px;
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 10px;
 }
 
 .logo-tag {
@@ -124,7 +124,7 @@ header {
 /* Top bar: search + tags all in one compact strip */
 .user-topbar {
   background: var(--accent);
-  padding: 8px 24px;
+  padding: 4px 24px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -144,13 +144,13 @@ header {
   border: 1px solid rgba(245,242,236,0.25);
   color: #f5f2ec;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 16px;
   padding: 8px 14px;
   border-radius: var(--radius);
   outline: none;
   letter-spacing: 1px;
   transition: border-color 0.15s, background 0.15s;
-  width: 220px;
+  width: 280px;
 }
 .search-input::placeholder { color: rgba(245,242,236,0.35); font-size: 12px; letter-spacing: 0.3px; }
 .search-input:focus { border-color: var(--accent-alt); background: rgba(245,242,236,0.15); }
@@ -270,8 +270,8 @@ header {
 .doc-card-header {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 14px;
+  gap: 12px;
+  padding: 12px 14px;
   user-select: none;
 }
 
@@ -739,17 +739,193 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   padding-left: 8px;
 }
 
+/* ── BULK BAR ── */
+.bulk-bar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: rgba(200,75,49,0.07);
+  border-bottom: 1px solid var(--accent-alt);
+  flex-wrap: wrap;
+}
+.bulk-bar.visible { display: flex; }
+.bulk-bar > span { font-size: 12px; font-weight: 500; color: var(--accent-alt); flex-shrink: 0; }
+.bulk-tag-assign { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* tag-toggle states in bulk bar */
+.tag-toggle.all-have {
+  border-color: var(--accent-alt);
+  color: var(--accent-alt);
+  background: rgba(200,75,49,0.12);
+  font-weight: 500;
+}
+.tag-toggle.some-have {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(26,26,46,0.07);
+}
+
+/* ── DOC ROWS (new style) ── */
+.doc-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.doc-row:last-child { border-bottom: none; }
+.doc-row:hover { background: var(--bg); }
+.doc-row.selected { background: rgba(200,75,49,0.05); }
+
+.doc-row-check {
+  width: 16px; height: 16px;
+  cursor: pointer;
+  margin-top: 3px;
+  accent-color: var(--accent-alt);
+  flex-shrink: 0;
+}
+
+.doc-row-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+.doc-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-row-name {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.doc-row-filename {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inline tag editor */
+.doc-row-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.doc-row-tag-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.doc-row-tag-input {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text);
+  outline: none;
+  width: 110px;
+  transition: border-color 0.15s, width 0.2s;
+}
+.doc-row-tag-input:focus { border-color: var(--accent); border-style: solid; width: 150px; }
+.doc-row-tag-input::placeholder { color: var(--muted); }
+
+.doc-row-tag-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 500;
+  min-width: 160px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.doc-row-tag-dropdown.open { display: block; }
+
+.doc-row-tag-option {
+  padding: 7px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.1s;
+  font-family: var(--mono);
+}
+.doc-row-tag-option:hover { background: var(--bg); }
+.doc-row-tag-option.checked {
+  background: rgba(200,75,49,0.1);
+  color: var(--accent-alt);
+  font-weight: 500;
+}
+.doc-row-tag-option.checked:hover { background: rgba(200,75,49,0.18); }
+.doc-row-tag-option .check-mark { font-size: 11px; width: 14px; flex-shrink: 0; }
+
+.doc-row-actions { display: flex; gap: 5px; flex-shrink: 0; margin-top: 1px; }
+
+/* Preview iframe overlay */
+.doc-preview-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,46,0.7);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+.doc-preview-overlay.open { display: flex; }
+.doc-preview-box {
+  background: #525659;
+  width: 90vw;
+  height: 90vh;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.doc-preview-head {
+  background: var(--accent);
+  color: #f5f2ec;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.doc-preview-box iframe { flex: 1; border: none; width: 100%; }
+
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    DMC Doc Tagger
-    <!-- <span class="logo-tag">v1</span> -->
+    DMC Docs
+<!--    <span class="logo-tag">v1</span>-->
   </div>
   <div class="header-nav">
-    <button class="btn btn-ghost" id="nav-user" onclick="showUser()">📄 Zobrazit dokumenty</button>
+    <button class="btn btn-ghost" id="nav-user" onclick="showUser()">📄 Zobrazit documenty</button>
     <button class="btn btn-ghost" id="nav-admin" onclick="openAdminGate()">⚙ Admin</button>
   </div>
 </header>
@@ -759,8 +935,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   <!-- Top bar: search input + tag pills all in one line -->
   <div class="user-topbar">
     <div class="user-topbar-search">
-      <input type="text" class="search-input" id="tag-search" placeholder="Naskenujte, nebo vyberte tag" autocomplete="on" autofocus>
-      <button class="btn btn-primary" onclick="doSearch()">VYBER</button>
+      <input type="text" class="search-input" id="tag-search" placeholder="Nakenujte nebo napište tag…" autocomplete="off" autofocus>
+      <button class="btn btn-primary" onclick="doSearch()">Zobrazit</button>
     </div>
     <div class="topbar-divider"></div>
     <div class="tag-cloud" id="tag-cloud">
@@ -784,7 +960,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <div class="pdf-viewer-panel empty" id="pdf-viewer-panel">
       <div class="pdf-empty-hint">
         <div class="icon">📄</div>
-        <p>Select a document to view it</p>
+        <p>Vyberte dokument, který chcete zobrazit</p>
       </div>
     </div>
   </div>
@@ -798,15 +974,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <div>
       <div class="panel">
         <div class="panel-head">
-          Správa tagů
-          <span class="sub" id="tag-count-lbl">0 tag(y)</span>
+          Správce tagů
+          <span class="sub" id="tag-count-lbl">0 tagů</span>
         </div>
         <div class="panel-body">
           <div class="field-group">
-            <label class="field-label">NOVÝ TAG</label>
+            <label class="field-label">Nový tag</label>
             <div style="display:flex;gap:6px">
-              <input type="text" class="field" id="new-tag" placeholder="např. Part Number" maxlength="40" onkeydown="if(event.key==='Enter')createTag()">
-              <button class="btn btn-primary" onclick="createTag()">Přidej</button>
+              <input type="text" class="field" id="new-tag" placeholder="např. 28501899" maxlength="40" onkeydown="if(event.key==='Enter')createTag()">
+              <button class="btn btn-primary" onclick="createTag()">Přidat</button>
             </div>
           </div>
           <hr>
@@ -821,42 +997,42 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
       <!-- Add/Edit form -->
       <div class="panel">
         <div class="panel-head">
-          <span id="form-title">Klasifukuj dokument</span>
+          <span id="form-title">Přidat dokument</span>
           <span class="sub" id="form-subtitle"></span>
         </div>
         <div class="panel-body">
           <div class="edit-mode-banner" id="edit-banner">
-            <span>✏ Editace dokumentu — zanechte prázdnou cestu pro zachování původního dokumentu</span>
+            <span>✏ Úprava dokumentu — zanechte prázdnou cestu pro zachování souboru</span>
             <button class="btn btn-sm btn-outline" onclick="cancelEdit()" style="border-color:var(--accent-alt);color:var(--accent-alt)">Zrušit</button>
           </div>
 
           <div class="field-group">
-            <label class="field-label">Název dokumentu (název zobrazení)</label>
-            <input type="text" class="field" id="doc-name" placeholder="např. WIP-28501899-BG">
+            <label class="field-label">Název dokumentu (zobrazený název)</label>
+            <input type="text" class="field" id="doc-name" placeholder="např. 001 Bad Mark Alu">
           </div>
 
           <div class="field-group">
-            <label class="field-label">PDF soubor (network share)</label>
+            <label class="field-label">PDF Soubor (network share)</label>
             <div class="browse-row">
               <div class="browse-selected" id="browse-selected">
                 <span class="browse-icon">📄</span>
-                <span class="browse-text" id="browse-text">Není vybrán žádný soubor</span>
+                <span class="browse-text" id="browse-text">Nebyl vybrán žádný soubor</span>
               </div>
-              <button class="btn btn-outline" type="button" onclick="openBrowser()">📁 VYBER…</button>
+              <button class="btn btn-outline" type="button" onclick="openBrowser()">📁 Procházet…</button>
             </div>
             <input type="hidden" id="doc-path">
           </div>
 
           <div class="field-group">
-            <label class="field-label">Přiřaď tagy</label>
+            <label class="field-label">Přiřadit tagy</label>
             <div class="tag-selector" id="tag-selector">
-              <span style="color:var(--muted);font-size:12px">Nejprve vytvoř tag →</span>
+              <span style="color:var(--muted);font-size:12px"><- Nejprve vytvoř tagy></span>
             </div>
           </div>
 
           <div style="display:flex;gap:8px;margin-top:4px">
             <button class="btn btn-primary" onclick="saveDoc()">Uložit dokument</button>
-            <button class="btn btn-outline btn-sm" onclick="cancelEdit()" id="cancel-btn" style="display:none">Cancel</button>
+            <button class="btn btn-outline btn-sm" onclick="cancelEdit()" id="cancel-btn" style="display:none">Zrušit</button>
           </div>
         </div>
       </div>
@@ -864,17 +1040,33 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
       <!-- Doc list -->
       <div class="panel">
         <div class="panel-head">
-          Dokumenty
+          <span>Dokumenty</span>
           <span class="sub" id="doc-count-lbl">0 dokumentů</span>
         </div>
-        <div class="panel-body" id="doc-table-wrap">
-          <div class="empty-state" style="padding:30px 0">
-            <div class="empty-icon" style="font-size:32px">📂</div>
-            <p>Žádný dokument zatím nebyl klasifikován</p>
+        <!-- Bulk action bar — visible when rows are checked -->
+        <div class="bulk-bar" id="bulk-bar">
+          <span id="bulk-label">0 vybraných</span>
+          <div class="bulk-tag-assign">
+            <span style="font-size:11px;color:var(--muted)">Přiřadit tagy:</span>
+            <div id="bulk-tag-toggles" class="tag-selector" style="display:inline-flex;gap:6px;flex-wrap:wrap"></div>
+            <button class="btn btn-primary btn-sm" onclick="applyBulkTags()">Uložit</button>
           </div>
+          <button class="btn btn-sm btn-outline" style="margin-left:auto" onclick="clearBulkSelection()">✕ Zrušit výber</button>
         </div>
+        <div class="panel-body" id="doc-table-wrap"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ════════════ DOC PREVIEW MODAL ════════════ -->
+<div class="doc-preview-overlay" id="doc-preview-overlay" onclick="if(event.target===this)closePreview()">
+  <div class="doc-preview-box">
+    <div class="doc-preview-head">
+      <span id="doc-preview-title">Dokument</span>
+      <button class="btn btn-ghost btn-sm" onclick="closePreview()">✕ Zavřít</button>
+    </div>
+    <iframe id="doc-preview-iframe" src="" title="Preview"></iframe>
   </div>
 </div>
 
@@ -883,22 +1075,22 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   <div class="browser-modal">
     <div class="browser-head">
       <div class="browser-path-bar">
-        <button class="btn btn-ghost browser-up-btn" id="browser-up" onclick="browseUp()" disabled title="Go up">↑ Up</button>
-        <span class="browser-current-path" id="browser-current-path">Loading…</span>
+        <button class="btn btn-ghost browser-up-btn" id="browser-up" onclick="browseUp()" disabled title="Go up">↑ Nahoru</button>
+        <span class="browser-current-path" id="browser-current-path">Načítání…</span>
       </div>
       <button class="btn btn-ghost" onclick="closeBrowser()" style="flex-shrink:0">✕</button>
     </div>
     <div class="browser-search-bar">
-      <input type="text" class="browser-search-input" id="browser-search" placeholder="🔍  Vyhledej název souboru" oninput="onBrowserSearch(this.value)">
+      <input type="text" class="browser-search-input" id="browser-search" placeholder="🔍  Procházet soubory…" oninput="onBrowserSearch(this.value)">
     </div>
     <div class="browser-body" id="browser-body">
-      <div class="browser-loading">Loading…</div>
+      <div class="browser-loading">Načítání…</div>
     </div>
     <div class="browser-foot">
-      <div class="browser-selection" id="browser-selection">Není vybrán žádný soubor</div>
+      <div class="browser-selection" id="browser-selection">Nebyl vybrán žádný soubor</div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-outline" onclick="closeBrowser()">ZRUŠIT</button>
-        <button class="btn btn-primary" id="browser-select-btn" onclick="confirmBrowse()" disabled>VYBER SOUBOR</button>
+        <button class="btn btn-outline" onclick="closeBrowser()">Zrušit</button>
+        <button class="btn btn-primary" id="browser-select-btn" onclick="confirmBrowse()" disabled>Vybrat soubor</button>
       </div>
     </div>
   </div>
@@ -907,11 +1099,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 <!-- ════════════ LOGIN MODAL ════════════ -->
 <div class="overlay" id="login-overlay">
   <div class="modal">
-    <div class="modal-logo">DMC Doc Tagger</div>
-    <div class="modal-sub">Zadej admin heslo</div>
-    <input type="password" class="field" id="login-pw" placeholder="Heslo" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="modal-logo">DMC Docs</div>
+    <div class="modal-sub">Zadejte Admin heslo</div>
+    <input type="password" class="field" id="login-pw" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="modal-err" id="login-err"></div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">Vstoupit jako admin</button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">Vstoupit jako Admin</button>
   </div>
 </div>
 
@@ -994,7 +1186,7 @@ async function loadTags() {
 function renderTagCloud() {
   const el = document.getElementById('tag-cloud');
   if (!allTags.length) {
-    el.innerHTML = '<span class="tag-cloud-label">Tagy:</span><span style="color:rgba(245,242,236,0.35);font-size:11px">Dosud nebyl žádný tag vytvořen</span>';
+    el.innerHTML = '<span class="tag-cloud-label">Tagy:</span><span style="color:rgba(245,242,236,0.35);font-size:11px">Zatím neexistují žádné tagy</span>';
     return;
   }
   const sorted = [...allTags].sort((a, b) => a.localeCompare(b));
@@ -1069,8 +1261,8 @@ async function runSearch() {
   if (!docs.length) {
     list.innerHTML = `<div class="empty-state">
       <div class="empty-icon">🔍</div>
-      <h3>Dokument nenalezen</h3>
-      <p>Žádný dokument nemá přidělen tento tag</p>
+      <h3>Nebyly nalezeny žádné dokumenty</h3>
+      <p>Žádný dokument neodpovídá vybranému tagu</p>
     </div>`;
     panel.classList.remove('has-open');
     showPdfHint();
@@ -1112,7 +1304,7 @@ function openDoc(id) {
 function showPdfHint() {
   const panel = document.getElementById('pdf-viewer-panel');
   panel.classList.add('empty');
-  panel.innerHTML = `<div class="pdf-empty-hint"><div class="icon">📄</div><p>Select a document to view it</p></div>`;
+  panel.innerHTML = `<div class="pdf-empty-hint"><div class="icon">📄</div><p>Vyberte dokument</p></div>`;
 }
 
 function clearSearch() {
@@ -1128,6 +1320,7 @@ function clearSearch() {
 
 // ── ADMIN DATA ─────────────────────────────────
 async function loadAdminData() {
+  selectedDocIds.clear();
   [allTags, allDocs] = await Promise.all([
     api('GET', '/api/tags'),
     api('GET', '/api/docs')
@@ -1142,7 +1335,7 @@ function renderTagsAdmin() {
   document.getElementById('tag-count-lbl').textContent = allTags.length + ' tag' + (allTags.length !== 1 ? 'y' : '');
   const el = document.getElementById('tag-list-admin');
   if (!allTags.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:8px">Zatím není žádný tag vytvořen</p>';
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:8px">Zatím neexistuje žádný tag</p>';
     return;
   }
   el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => `
@@ -1166,7 +1359,7 @@ async function createTag() {
 }
 
 async function deleteTag(name) {
-  if (!confirm(`Delete tag "${name}"?\nIt will be removed from all documents.`)) return;
+  if (!confirm(`Smazat tag "${name}"?\nTag bude odebrán ze všech dokumentů.`)) return;
   try {
     await api('DELETE', `/api/tags/${encodeURIComponent(name)}`);
     toast('Tag deleted');
@@ -1178,10 +1371,10 @@ async function deleteTag(name) {
 function renderTagSelector(selected = []) {
   const el = document.getElementById('tag-selector');
   if (!allTags.length) {
-    el.innerHTML = '<span style="color:var(--muted);font-size:12px"><-Nejprve vytvoř tagy</span>';
+    el.innerHTML = '<span style="color:var(--muted);font-size:12px"><-Nejdříve vytvořte tagy</span>';
     return;
   }
-   el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => {
+  el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => {
     const on = selected.includes(t);
     return `<span class="tag-toggle ${on ? 'selected' : ''}" onclick="this.classList.toggle('selected')">${esc(t)}</span>`;
   }).join('');
@@ -1192,30 +1385,198 @@ function selectedTags() {
 }
 
 // ── DOCS ADMIN ─────────────────────────────────
+let selectedDocIds = new Set();
+
 function renderDocsTable() {
   document.getElementById('doc-count-lbl').textContent = allDocs.length + ' dokument' + (allDocs.length !== 1 ? 'y' : '');
   const wrap = document.getElementById('doc-table-wrap');
   if (!allDocs.length) {
-    wrap.innerHTML = '<div class="empty-state" style="padding:30px 0"><div class="empty-icon" style="font-size:32px">📂</div><p>Žádný dokument dosud nebyl otagován</p></div>';
+    wrap.innerHTML = '<div class="empty-state" style="padding:30px 0"><div class="empty-icon" style="font-size:32px">📂</div><p>Zatím neexistuje žádný dokument</p></div>';
+    renderBulkBar();
     return;
   }
-  wrap.innerHTML = `<table class="doc-table">
-    <thead><tr>
-      <th>Name</th><th>Path</th><th>Tags</th><th></th>
-    </tr></thead>
-    <tbody>${allDocs.map(d => `
-      <tr>
-        <td class="doc-name-cell">${esc(d.name)}</td>
-        <td class="doc-path-cell" title="${esc(d.path || '')}">${esc(d.filename || '—')}</td>
-        <td>${d.tags.map(t => `<span class="tag-chip">${esc(t)}</span>`).join(' ')}</td>
-        <td><div class="actions-cell">
-          <button class="btn btn-sm btn-outline" onclick="editDoc('${d.id}')">Uprav</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteDoc('${d.id}')">SMAŽ</button>
-        </div></td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
+
+  wrap.innerHTML = allDocs.map(d => {
+    const checked = selectedDocIds.has(d.id);
+    return `<div class="doc-row ${checked ? 'selected' : ''}" id="row-${d.id}">
+      <input type="checkbox" class="doc-row-check" ${checked ? 'checked' : ''} onchange="toggleDocSelect('${d.id}', this.checked)">
+      <div class="doc-row-main">
+        <div class="doc-row-title">
+          <span class="doc-row-name" title="${esc(d.name)}">${esc(d.name)}</span>
+        </div>
+        <div class="doc-row-filename" title="${esc(d.filename || '')}">${esc(d.filename || '—')}</div>
+        <div class="doc-row-tags" id="tags-${d.id}">
+          ${renderInlineTags(d)}
+        </div>
+      </div>
+      <div class="doc-row-actions">
+        <button class="btn btn-sm btn-outline" title="Preview" onclick="previewDoc('${d.id}', '${esc(d.name)}')">👁</button>
+        <button class="btn btn-sm btn-outline" onclick="editDoc('${d.id}')">Upravit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteDoc('${d.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Attach dropdown close handler
+  document.addEventListener('click', closeAllTagDropdowns, { once: false });
+  renderBulkBar();
 }
+
+function renderInlineTags(doc) {
+  const chips = doc.tags.map(t =>
+    `<span class="tag-chip" style="cursor:pointer" onclick="removeTagFromDoc('${doc.id}','${esc(t)}')" title="Click to remove">${esc(t)} ✕</span>`
+  ).join('');
+
+  return chips + `
+    <div class="doc-row-tag-input-wrap" id="tag-input-wrap-${doc.id}">
+      <input type="text"
+        class="doc-row-tag-input"
+        placeholder="+ přidat tag"
+        autocomplete="off"
+        oninput="onTagInput('${doc.id}', this.value)"
+        onfocus="openTagDropdown('${doc.id}')"
+        onkeydown="onTagInputKey(event, '${doc.id}')">
+      <div class="doc-row-tag-dropdown" id="tag-drop-${doc.id}"></div>
+    </div>`;
+}
+
+function openTagDropdown(docId) {
+  const doc = allDocs.find(d => d.id === docId);
+  if (!doc) return;
+  renderTagDropdown(docId, '', doc.tags);
+  document.getElementById('tag-drop-' + docId).classList.add('open');
+}
+
+function renderTagDropdown(docId, filter, currentTags) {
+  const drop = document.getElementById('tag-drop-' + docId);
+  if (!drop) return;
+  const sorted = [...allTags].sort((a, b) => a.localeCompare(b));
+  const filtered = filter ? sorted.filter(t => t.toLowerCase().includes(filter.toLowerCase())) : sorted;
+
+  if (!filtered.length) {
+    drop.innerHTML = `<div class="doc-row-tag-option" style="color:var(--muted);cursor:default">No matches</div>`;
+    return;
+  }
+
+  drop.innerHTML = filtered.map(t => {
+    const on = currentTags.includes(t);
+    return `<div class="doc-row-tag-option ${on ? 'checked' : ''}" onclick="toggleTagOnDoc('${docId}','${esc(t)}')">
+      <span class="check-mark">${on ? '✓' : ''}</span>${esc(t)}
+    </div>`;
+  }).join('');
+}
+
+function onTagInput(docId, val) {
+  const doc = allDocs.find(d => d.id === docId);
+  if (!doc) return;
+  renderTagDropdown(docId, val, doc.tags);
+  document.getElementById('tag-drop-' + docId).classList.add('open');
+}
+
+function onTagInputKey(e, docId) {
+  if (e.key === 'Escape') { closeAllTagDropdowns(); e.target.blur(); }
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim().toUpperCase();
+    if (val) toggleTagOnDoc(docId, val);
+    e.target.value = '';
+  }
+}
+
+async function toggleTagOnDoc(docId, tag) {
+  const doc = allDocs.find(d => d.id === docId);
+  if (!doc) return;
+  const newTags = doc.tags.includes(tag)
+    ? doc.tags.filter(t => t !== tag)
+    : [...doc.tags, tag];
+  try {
+    await api('PUT', `/api/docs/${docId}`, { name: doc.name, tags: newTags });
+    doc.tags = newTags;
+    document.getElementById('tags-' + docId).innerHTML = renderInlineTags(doc);
+    // Re-open dropdown after re-render
+    const input = document.querySelector(`#tag-input-wrap-${docId} input`);
+    if (input) { renderTagDropdown(docId, input.value, doc.tags); document.getElementById('tag-drop-' + docId).classList.add('open'); }
+  } catch(e) { toast(e.message, true); }
+}
+
+async function removeTagFromDoc(docId, tag) {
+  await toggleTagOnDoc(docId, tag);
+}
+
+function closeAllTagDropdowns(e) {
+  if (e && e.target && e.target.closest && e.target.closest('.doc-row-tag-input-wrap')) return;
+  document.querySelectorAll('.doc-row-tag-dropdown.open').forEach(d => d.classList.remove('open'));
+}
+
+// ── BULK SELECTION ─────────────────────────────
+function toggleDocSelect(id, checked) {
+  if (checked) selectedDocIds.add(id);
+  else selectedDocIds.delete(id);
+  const row = document.getElementById('row-' + id);
+  if (row) row.classList.toggle('selected', checked);
+  renderBulkBar();
+}
+
+function renderBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  const n = selectedDocIds.size;
+  if (n === 0) { bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
+  document.getElementById('bulk-label').textContent = n + ' vybrán';
+
+  const selectedDocs = allDocs.filter(d => selectedDocIds.has(d.id));
+  const sorted = [...allTags].sort((a, b) => a.localeCompare(b));
+
+  document.getElementById('bulk-tag-toggles').innerHTML = sorted.map(t => {
+    const countWith = selectedDocs.filter(d => d.tags.includes(t)).length;
+    const allHave  = countWith === n;
+    const someHave = countWith > 0 && countWith < n;
+    const cls = allHave ? 'all-have' : someHave ? 'some-have' : '';
+    const title = allHave  ? `All ${n} selected docs have this tag`
+                : someHave ? `${countWith} z ${n} vybraných dokumentů má tento tag`
+                : 'Nebyl přiřazen vybraným dokumentům';
+    return `<span class="tag-toggle ${cls}" title="${title}" onclick="this.classList.toggle('selected')">${esc(t)}</span>`;
+  }).join('');
+}
+
+function clearBulkSelection() {
+  selectedDocIds.clear();
+  document.querySelectorAll('.doc-row-check').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.doc-row.selected').forEach(r => r.classList.remove('selected'));
+  renderBulkBar();
+}
+
+async function applyBulkTags() {
+  const tagsToAdd = [...document.querySelectorAll('#bulk-tag-toggles .tag-toggle.selected')].map(el => el.textContent);
+  if (!tagsToAdd.length) { toast('Vyberte alespoň jeden tag', true); return; }
+  if (!selectedDocIds.size) { toast('Vyberte alespoň jeden dokument', true); return; }
+
+  const promises = [...selectedDocIds].map(id => {
+    const doc = allDocs.find(d => d.id === id);
+    if (!doc) return;
+    const merged = [...new Set([...doc.tags, ...tagsToAdd])];
+    return api('PUT', `/api/docs/${id}`, { name: doc.name, tags: merged });
+  });
+
+  try {
+    await Promise.all(promises);
+    toast(`Tagy přiřazeny ${selectedDocIds.size} dokument(ům)`);
+    clearBulkSelection();
+    loadAdminData();
+  } catch(e) { toast(e.message, true); }
+}
+
+// ── PREVIEW ────────────────────────────────────
+function previewDoc(id, name) {
+  document.getElementById('doc-preview-title').textContent = name;
+  document.getElementById('doc-preview-iframe').src = `/pdf/${id}`;
+  document.getElementById('doc-preview-overlay').classList.add('open');
+}
+
+function closePreview() {
+  document.getElementById('doc-preview-overlay').classList.remove('open');
+  document.getElementById('doc-preview-iframe').src = '';
+}
+
 
 async function saveDoc() {
   const name = document.getElementById('doc-name').value.trim();
@@ -1227,10 +1588,10 @@ async function saveDoc() {
   try {
     if (editingId) {
       await api('PUT', `/api/docs/${editingId}`, { name, path, tags });
-      toast('Dokument byl aktualizován');
+      toast('Dokument byl upraven');
       cancelEdit();
     } else {
-      if (!path) { toast('Zadejte cestu k dokumentu', true); return; }
+      if (!path) { toast('Zadejte cestu k souboru', true); return; }
       await api('POST', '/api/docs', { name, path, tags });
       toast('Dokument byl přidán');
       resetForm();
@@ -1275,10 +1636,10 @@ function resetForm() {
 }
 
 async function deleteDoc(id) {
-  if (!confirm('Chcete smazat tento dokument? (pdf soubor v úložišti NEBUDE smazán)')) return;
+  if (!confirm('Odstranit tento soubor? (PDF soubor bude v úložišti ZACHOVÁN)')) return;
   try {
     await api('DELETE', `/api/docs/${id}`);
-    toast('Dokument byl smazán');
+    toast('Dokument byl odstraněn');
     loadAdminData();
   } catch(e) { toast(e.message, true); }
 }
@@ -1293,7 +1654,7 @@ function openBrowser() {
   browserSelectedPath = null;
   browserSelectedName = null;
   document.getElementById('browser-overlay').classList.add('open');
-  document.getElementById('browser-selection').textContent = 'Není vybrán žádný soubor';
+  document.getElementById('browser-selection').textContent = 'Nebyl vybrán žádný soubor';
   document.getElementById('browser-selection').classList.remove('has-file');
   document.getElementById('browser-select-btn').disabled = true;
   document.getElementById('browser-search').value = '';
@@ -1308,7 +1669,7 @@ async function browseTo(path) {
   browserCurrentPath = path;
   document.getElementById('browser-search').value = '';
   const body = document.getElementById('browser-body');
-  body.innerHTML = '<div class="browser-loading">Loading…</div>';
+  body.innerHTML = '<div class="browser-loading">Načítání…</div>';
 
   try {
     const data = await api('GET', '/api/browse?path=' + encodeURIComponent(path));
@@ -1333,8 +1694,8 @@ function onBrowserSearch(val) {
 
 async function doBrowserSearch(query) {
   const body = document.getElementById('browser-body');
-  body.innerHTML = '<div class="browser-loading">Searching…</div>';
-  document.getElementById('browser-current-path').textContent = `Search: "${query}"`;
+  body.innerHTML = '<div class="browser-loading">Hledám…</div>';
+  document.getElementById('browser-current-path').textContent = `Hledat: "${query}"`;
   document.getElementById('browser-up').disabled = true;
 
   try {
@@ -1349,7 +1710,7 @@ function renderBrowserEntries(entries, isSearch) {
   const body = document.getElementById('browser-body');
 
   if (!entries.length) {
-    body.innerHTML = `<div class="browser-empty">${isSearch ? 'No PDFs match your search' : 'No folders or PDF files here'}</div>`;
+    body.innerHTML = `<div class="browser-empty">${isSearch ? 'Žádné PDF neodpovídá' : 'Nejsou zde žádné PDF nebo adresáře'}</div>`;
     return;
   }
 
