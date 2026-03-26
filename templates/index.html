@@ -1049,7 +1049,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
           <div class="bulk-tag-assign">
             <span style="font-size:11px;color:var(--muted)">Přiřadit tagy:</span>
             <div id="bulk-tag-toggles" class="tag-selector" style="display:inline-flex;gap:6px;flex-wrap:wrap"></div>
-            <button class="btn btn-primary btn-sm" onclick="applyBulkTags()">Uložit</button>
+            <button class="btn btn-primary btn-sm" onclick="applyBulkTags('add')">＋ Přidat</button>
+            <button class="btn btn-sm btn-outline" style="border-color:var(--danger);color:var(--danger)" onclick="applyBulkTags('remove')">− Odebrat</button>
           </div>
           <button class="btn btn-sm btn-outline" style="margin-left:auto" onclick="clearBulkSelection()">✕ Zrušit výber</button>
         </div>
@@ -1545,24 +1546,36 @@ function clearBulkSelection() {
   renderBulkBar();
 }
 
-async function applyBulkTags() {
-  const tagsToAdd = [...document.querySelectorAll('#bulk-tag-toggles .tag-toggle.selected')].map(el => el.textContent);
-  if (!tagsToAdd.length) { toast('Vyberte alespoň jeden tag', true); return; }
-  if (!selectedDocIds.size) { toast('Vyberte alespoň jeden dokument', true); return; }
+async function applyBulkTags(mode) {
+  const selectedTagEls = [...document.querySelectorAll('#bulk-tag-toggles .tag-toggle.selected')];
+  const tagNames = selectedTagEls.map(el => el.textContent.trim());
+  if (!tagNames.length) { toast('Select at least one tag first', true); return; }
+  if (!selectedDocIds.size) { toast('Select at least one document', true); return; }
 
-  const promises = [...selectedDocIds].map(id => {
+  let successCount = 0;
+  for (const id of selectedDocIds) {
     const doc = allDocs.find(d => d.id === id);
-    if (!doc) return;
-    const merged = [...new Set([...doc.tags, ...tagsToAdd])];
-    return api('PUT', `/api/docs/${id}`, { name: doc.name, tags: merged });
-  });
+    if (!doc) continue;
+    let newTags;
+    if (mode === 'add') {
+      newTags = [...new Set([...doc.tags, ...tagNames])];
+    } else {
+      newTags = doc.tags.filter(t => !tagNames.includes(t));
+    }
+    try {
+      await api('PUT', `/api/docs/${id}`, { name: doc.name, tags: newTags });
+      doc.tags = newTags;
+      successCount++;
+    } catch(e) {
+      toast(`Failed on "${doc.name}": ${e.message}`, true);
+      return;
+    }
+  }
 
-  try {
-    await Promise.all(promises);
-    toast(`Tagy přiřazeny ${selectedDocIds.size} dokument(ům)`);
-    clearBulkSelection();
-    loadAdminData();
-  } catch(e) { toast(e.message, true); }
+  const verb = mode === 'add' ? 'added to' : 'removed from';
+  toast(`Tags ${verb} ${successCount} document(s)`);
+  clearBulkSelection();
+  loadAdminData();
 }
 
 // ── PREVIEW ────────────────────────────────────
