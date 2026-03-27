@@ -766,6 +766,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   background: rgba(26,26,46,0.07);
 }
 
+/* selected always wins — yellow overrides red/dark */
+.tag-toggle.all-have.selected,
+.tag-toggle.some-have.selected {
+  border-color: #b8860b;
+  color: #7a5c00;
+  background: #fef08a;
+  font-weight: 600;
+}
+
 /* ── DOC ROWS (new style) ── */
 .doc-row {
   display: grid;
@@ -1333,7 +1342,7 @@ async function loadAdminData() {
 
 // ── TAGS ADMIN ─────────────────────────────────
 function renderTagsAdmin() {
-  document.getElementById('tag-count-lbl').textContent = allTags.length + ' tag' + (allTags.length !== 1 ? 'y' : '');
+  document.getElementById('tag-count-lbl').textContent = allTags.length + ' tag' + (allTags.length !== 1 ? 'ů' : '');
   const el = document.getElementById('tag-list-admin');
   if (!allTags.length) {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:8px">Zatím neexistuje žádný tag</p>';
@@ -1389,7 +1398,7 @@ function selectedTags() {
 let selectedDocIds = new Set();
 
 function renderDocsTable() {
-  document.getElementById('doc-count-lbl').textContent = allDocs.length + ' dokument' + (allDocs.length !== 1 ? 'y' : '');
+  document.getElementById('doc-count-lbl').textContent = allDocs.length + ' dokument' + (allDocs.length !== 1 ? 'ů' : '');
   const wrap = document.getElementById('doc-table-wrap');
   if (!allDocs.length) {
     wrap.innerHTML = '<div class="empty-state" style="padding:30px 0"><div class="empty-icon" style="font-size:32px">📂</div><p>Zatím neexistuje žádný dokument</p></div>';
