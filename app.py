@@ -1,7 +1,7 @@
 """
 DMC Doc Tagger - Flask backend
 Run with: python app.py
-Then open: http://localhost:5000
+Then open: http://localhost:5001
 """
 
 import os
@@ -12,7 +12,7 @@ from flask import Flask, render_template, request, jsonify, send_file, abort
 app = Flask(__name__)
 
 # ── CONFIG ──────────────────────────────────────────────────────────────────
-ADMIN_PASSWORD = ""               # Change this!
+ADMIN_PASSWORD = "admin123"               # Change this!
 DATA_FILE = Path("tags.json")             # Stored next to app.py
 SHARE_ROOT = r"\\fsczmc01\TEST_DOC_SCAN"  # Root of the file browser
 # ────────────────────────────────────────────────────────────────────────────
@@ -76,6 +76,24 @@ def delete_tag(name):
     data["tags"] = [t for t in data["tags"] if t != name]
     for doc in data["docs"]:
         doc["tags"] = [t for t in doc["tags"] if t != name]
+    save_data(data)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/tags/<n>/rename", methods=["POST"])
+def rename_tag(n):
+    new_name = request.json.get("new_name", "").strip().upper()
+    if not new_name:
+        return jsonify({"error": "New name required"}), 400
+    data = load_data()
+    old_name = n.upper()
+    if old_name not in data["tags"]:
+        return jsonify({"error": "Tag not found"}), 404
+    if new_name in data["tags"]:
+        return jsonify({"error": "Tag already exists"}), 409
+    data["tags"] = [new_name if t == old_name else t for t in data["tags"]]
+    for doc in data["docs"]:
+        doc["tags"] = [new_name if t == old_name else t for t in doc["tags"]]
     save_data(data)
     return jsonify({"ok": True})
 

@@ -1350,12 +1350,54 @@ function renderTagsAdmin() {
     return;
   }
   el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => `
-    <div class="tag-item">
-      <span class="tag-name"><span class="tag-dot"></span>${esc(t)}</span>
-      <button class="btn btn-sm btn-danger" onclick="deleteTag('${esc(t)}')">✕</button>
+    <div class="tag-item" id="tag-item-${esc(t)}">
+      <span class="tag-name"><span class="tag-dot"></span><span class="tag-item-label">${esc(t)}</span></span>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-sm btn-outline" title="Rename" onclick="startRenameTag('${esc(t)}')">✏</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteTag('${esc(t)}')">✕</button>
+      </div>
     </div>
   `).join('');
 }
+
+function startRenameTag(oldName) {
+  const item = document.getElementById('tag-item-' + oldName);
+  if (!item) return;
+  item.innerHTML = `
+    <div style="display:flex;gap:6px;flex:1;align-items:center">
+      <span class="tag-dot" style="width:7px;height:7px;border-radius:50%;background:var(--accent-alt);flex-shrink:0"></span>
+      <input type="text" class="field" id="rename-input-${esc(oldName)}"
+        value="${esc(oldName)}"
+        style="flex:1;padding:4px 8px;font-size:12px;height:28px"
+        onkeydown="onRenameKey(event,'${esc(oldName)}')"
+        autofocus>
+    </div>
+    <div style="display:flex;gap:4px">
+      <button class="btn btn-sm btn-primary" onclick="confirmRenameTag('${esc(oldName)}')">✓</button>
+      <button class="btn btn-sm btn-outline" onclick="renderTagsAdmin()">✕</button>
+    </div>
+  `;
+  const input = document.getElementById('rename-input-' + oldName);
+  if (input) { input.focus(); input.select(); }
+}
+
+function onRenameKey(e, oldName) {
+  if (e.key === 'Enter') confirmRenameTag(oldName);
+  if (e.key === 'Escape') renderTagsAdmin();
+}
+
+async function confirmRenameTag(oldName) {
+  const input = document.getElementById('rename-input-' + oldName);
+  if (!input) return;
+  const newName = input.value.trim().toUpperCase();
+  if (!newName || newName === oldName) { renderTagsAdmin(); return; }
+  try {
+    await api('POST', `/api/tags/${encodeURIComponent(oldName)}/rename`, { new_name: newName });
+    toast(`Tag renamed: ${oldName} → ${newName}`);
+    loadAdminData();
+  } catch(e) { toast(e.message, true); renderTagsAdmin(); }
+}
+
 
 async function createTag() {
   const input = document.getElementById('new-tag');
