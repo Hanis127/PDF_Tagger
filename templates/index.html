@@ -365,9 +365,10 @@ header {
 
 .admin-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: auto 1fr;
   gap: 24px;
-  max-width: 1200px;
+  margin: 0 auto;
+  max-width: 1500px;
 }
 
 .panel {
@@ -390,13 +391,15 @@ header {
   justify-content: space-between;
 }
 
-.panel-head .sub { font-family: var(--mono); font-size: 11px; color: rgba(245,242,236,0.5); font-weight: 400; }
+.panel-head .sub { font-family: var(--mono); font-size: 11px; color: rgba(245,242,236,0.5); font-weight: 400;}
 
-.panel-body { padding: 18px; }
+.panel-body {
+  padding: 18px;
+}
 
 /* Fields */
-.field-group { margin-bottom: 14px; }
-.field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; display: block; }
+.field-group { margin-bottom: 14px;}
+.field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; display: block;}
 .field {
   width: 100%;
   background: var(--bg);
@@ -428,6 +431,9 @@ header {
   transition: border-color 0.15s;
 }
 .tag-item:hover { border-color: var(--accent); }
+.tag-fav-btn { border-color: var(--border); color: var(--muted); font-size: 13px; padding: 3px 7px; margin-left:8px}
+.tag-fav-btn:hover { border-color: #e87d7d; color: #c84b31; }
+.tag-fav-btn.fav-on { border-color: #c84b31; color: #c84b31; background: rgba(200,75,49,0.08); }
 .tag-name { font-size: 12px; display: flex; align-items: center; gap: 8px; }
 .tag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-alt); flex-shrink: 0; }
 
@@ -1124,7 +1130,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 let adminUnlocked = false;
 let editingId = null;
 let allTags = [];
+let allFavTags = new Set(); // names that are favourited
 let allDocs = [];
+let selectedDocIds = new Set();
 
 // ── TOAST ──────────────────────────────────────
 function toast(msg, isErr = false) {
@@ -1189,19 +1197,21 @@ function showAdmin() {
 let activeTags = new Set();
 
 async function loadTags() {
-  allTags = await api('GET', '/api/tags');
+  const raw = await api('GET', '/api/tags');
+  allTags = raw.map(t => t.name);
+  allFavTags = new Set(raw.filter(t => t.fav).map(t => t.name));
   renderTagCloud();
 }
 
 function renderTagCloud() {
   const el = document.getElementById('tag-cloud');
-  if (!allTags.length) {
+  const favs = [...allTags].filter(t => allFavTags.has(t)).sort((a, b) => a.localeCompare(b));
+  if (!favs.length) {
     el.innerHTML = '<span class="tag-cloud-label">Tagy:</span><span style="color:rgba(245,242,236,0.35);font-size:11px">Zatím neexistují žádné tagy</span>';
     return;
   }
-  const sorted = [...allTags].sort((a, b) => a.localeCompare(b));
-  el.innerHTML = '<span class="tag-cloud-label">Tagy:</span>' +
-    sorted.map(t => `<span class="tag-pill ${activeTags.has(t) ? 'active' : ''}" onclick="toggleTagPill('${esc(t)}')">${esc(t)}</span>`).join('');
+  el.innerHTML = '<span class="tag-cloud-label">Tags:</span>' +
+    favs.map(t => `<span class="tag-pill ${activeTags.has(t) ? 'active' : ''}" onclick="toggleTagPill('${esc(t)}')">${esc(t)}</span>`).join('');
 }
 
 function toggleTagPill(tag) {
@@ -1332,10 +1342,13 @@ function clearSearch() {
 // ── ADMIN DATA ─────────────────────────────────
 async function loadAdminData() {
   selectedDocIds.clear();
-  [allTags, allDocs] = await Promise.all([
+  const [rawTags, rawDocs] = await Promise.all([
     api('GET', '/api/tags'),
     api('GET', '/api/docs')
   ]);
+  allTags = rawTags.map(t => t.name);
+  allFavTags = new Set(rawTags.filter(t => t.fav).map(t => t.name));
+  allDocs = rawDocs;
   renderTagsAdmin();
   renderTagSelector();
   renderDocsTable();
@@ -1349,15 +1362,32 @@ function renderTagsAdmin() {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:8px">Zatím neexistuje žádný tag</p>';
     return;
   }
-  el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => `
-    <div class="tag-item" id="tag-item-${esc(t)}">
-      <span class="tag-name"><span class="tag-dot"></span><span class="tag-item-label">${esc(t)}</span></span>
-      <div style="display:flex;gap:4px">
-        <button class="btn btn-sm btn-outline" title="Rename" onclick="startRenameTag('${esc(t)}')">✎ </button>
-        <button class="btn btn-sm btn-danger" onclick="deleteTag('${esc(t)}')">✕</button>
+  el.innerHTML = [...allTags].sort((a, b) => a.localeCompare(b)).map(t => {
+    const isFav = allFavTags.has(t);
+    return `<div class="tag-item" id="tag-item-${esc(t)}">
+      <span class="tag-name">
+        <span class="tag-dot"></span>
+        <span class="tag-item-label">${esc(t)}</span>
+      </span>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="btn btn-sm tag-fav-btn ${isFav ? 'fav-on' : ''}" title="${isFav ? 'Odebrat z oblíbených' : 'Přidat do oblíbených'}" onclick="toggleFavourite('${esc(t)}')">${isFav ? '♥' : '♡'}</button>
+        <button class="btn btn-sm btn-outline" title="Přejmenovat" onclick="startRenameTag('${esc(t)}')">✎</button>
+        <button class="btn btn-sm btn-danger" title="Odstranit" onclick="deleteTag('${esc(t)}')">✕</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+async function toggleFavourite(name) {
+  try {
+    const res = await api('POST', `/api/tags/${encodeURIComponent(name)}/favourite`, {});
+    if (res.fav) {
+      allFavTags.add(name);
+    } else {
+      allFavTags.delete(name);
+    }
+    renderTagsAdmin();
+  } catch(e) { toast(e.message, true); }
 }
 
 function startRenameTag(oldName) {
@@ -1438,7 +1468,6 @@ function selectedTags() {
 }
 
 // ── DOCS ADMIN ─────────────────────────────────
-let selectedDocIds = new Set();
 
 function renderDocsTable() {
   document.getElementById('doc-count-lbl').textContent = allDocs.length + ' dokument' + (allDocs.length !== 1 ? 'ů' : '');
@@ -1604,6 +1633,8 @@ async function applyBulkTags(mode) {
   if (!tagNames.length) { toast('Select at least one tag first', true); return; }
   if (!selectedDocIds.size) { toast('Select at least one document', true); return; }
 
+  // Build API calls one at a time (sequential) to avoid race conditions
+  // where parallel PUTs all read the same stale doc.tags and overwrite each other
   let successCount = 0;
   for (const id of selectedDocIds) {
     const doc = allDocs.find(d => d.id === id);
@@ -1616,7 +1647,7 @@ async function applyBulkTags(mode) {
     }
     try {
       await api('PUT', `/api/docs/${id}`, { name: doc.name, tags: newTags });
-      doc.tags = newTags;
+      doc.tags = newTags; // update in-memory so next iteration sees fresh data
       successCount++;
     } catch(e) {
       toast(`Failed on "${doc.name}": ${e.message}`, true);
@@ -1676,7 +1707,7 @@ function editDoc(id) {
     ? `Current: ${doc.filename || doc.path} — click Browse to change`
     : 'No file — click Browse to select';
   document.getElementById('doc-path').value = ''; // clear so PUT keeps existing if not changed
-  document.getElementById('form-title').textContent = 'Edit Document';
+  document.getElementById('form-title').textContent = 'Upravit dokument';
   document.getElementById('edit-banner').classList.add('visible');
   document.getElementById('cancel-btn').style.display = '';
   renderTagSelector(doc.tags);

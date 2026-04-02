@@ -21,10 +21,13 @@ SHARE_ROOT = r"\\fsczmc01\TEST_DOC_SCAN"  # Root of the file browser
 def load_data():
     if DATA_FILE.exists():
         try:
-            return json.loads(DATA_FILE.read_text(encoding="utf-8"))
+            d = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+            if "favourites" not in d:
+                d["favourites"] = []
+            return d
         except Exception:
             pass
-    return {"tags": [], "docs": []}
+    return {"tags": [], "docs": [], "favourites": []}
 
 
 def save_data(data):
@@ -53,7 +56,8 @@ def login():
 @app.route("/api/tags", methods=["GET"])
 def get_tags():
     data = load_data()
-    return jsonify(data["tags"])
+    favs = set(data.get("favourites", []))
+    return jsonify([{"name": t, "fav": t in favs} for t in data["tags"]])
 
 
 @app.route("/api/tags", methods=["POST"])
@@ -69,18 +73,19 @@ def create_tag():
     return jsonify({"ok": True, "tag": name})
 
 
-@app.route("/api/tags/<name>", methods=["DELETE"])
-def delete_tag(name):
+@app.route("/api/tags/<path:n>", methods=["DELETE"])
+def delete_tag(n):
     data = load_data()
-    name = name.upper()
+    name = n.upper()
     data["tags"] = [t for t in data["tags"] if t != name]
+    data["favourites"] = [t for t in data.get("favourites", []) if t != name]
     for doc in data["docs"]:
         doc["tags"] = [t for t in doc["tags"] if t != name]
     save_data(data)
     return jsonify({"ok": True})
 
 
-@app.route("/api/tags/<n>/rename", methods=["POST"])
+@app.route("/api/tags/<path:n>/rename", methods=["POST"])
 def rename_tag(n):
     new_name = request.json.get("new_name", "").strip().upper()
     if not new_name:
@@ -92,10 +97,29 @@ def rename_tag(n):
     if new_name in data["tags"]:
         return jsonify({"error": "Tag already exists"}), 409
     data["tags"] = [new_name if t == old_name else t for t in data["tags"]]
+    data["favourites"] = [new_name if t == old_name else t for t in data.get("favourites", [])]
     for doc in data["docs"]:
         doc["tags"] = [new_name if t == old_name else t for t in doc["tags"]]
     save_data(data)
     return jsonify({"ok": True})
+
+
+@app.route("/api/tags/<path:n>/favourite", methods=["POST"])
+def toggle_favourite(n):
+    data = load_data()
+    name = n.upper()
+    if name not in data["tags"]:
+        return jsonify({"error": "Tag not found"}), 404
+    favs = data.get("favourites", [])
+    if name in favs:
+        favs.remove(name)
+        is_fav = False
+    else:
+        favs.append(name)
+        is_fav = True
+    data["favourites"] = favs
+    save_data(data)
+    return jsonify({"ok": True, "fav": is_fav})
 
 
 # ── API: DOCS ─────────────────────────────────────────────────────────────────
