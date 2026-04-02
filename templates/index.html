@@ -1256,6 +1256,7 @@ async function runSearch() {
       if (!seen.has(doc.id)) { seen.add(doc.id); docs.push(doc); }
     }
   }
+  docs.sort((a, b) => a.name.localeCompare(b.name));
 
   // Update active bar
   const bar = document.getElementById('active-tags-bar');
