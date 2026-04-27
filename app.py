@@ -7,7 +7,7 @@ Then open: http://localhost:5001
 import os
 import json
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, send_file, abort
+from flask import Flask, render_template, request, jsonify, send_file, abort, url_for
 
 app = Flask(__name__)
 
@@ -40,6 +40,9 @@ def save_data(data):
 def index():
     return render_template("index.html")
 
+@app.route('/favicon.ico')
+def favicon():
+    return url_for('static', filename='static/favicon.ico')
 
 # ── API: AUTH ────────────────────────────────────────────────────────────────
 

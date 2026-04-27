@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DMC Docs</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+  <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -220,7 +222,9 @@ header {
 .active-tags-bar .clear-btn {
   margin-left: auto;
   font-size: 11px;
-  color: var(--muted);
+  font-weight: bold;
+ /* color: var(--muted); */
+  color: red;
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -930,6 +934,121 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 }
 .doc-preview-box iframe { flex: 1; border: none; width: 100%; }
 
+  /* Combobox Styles */
+.combobox-container {
+  position: relative;
+  display: inline-block;
+  width: 280px;
+}
+
+.combobox-input {
+  width: 100%;
+  padding-right: 30px;
+  box-sizing: border-box;
+  background: rgba(245,242,236,0.1);
+  border: 1px solid rgba(245,242,236,0.25);
+  color: #f5f2ec;
+  font-family: var(--mono);
+  font-size: 16px;
+  padding: 8px 14px;
+  padding-right: 30px;
+  border-radius: var(--radius);
+  outline: none;
+  letter-spacing: 1px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.combobox-input::placeholder {
+  color: rgba(245,242,236,0.35);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.combobox-input:focus {
+  border-color: var(--accent-alt);
+  background: rgba(245,242,236,0.15);
+}
+
+.combobox-dropdown-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 30px;
+  background: rgba(245,242,236,0.1);
+  border: 1px solid rgba(245,242,236,0.25);
+  border-left: none;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  cursor: pointer;
+  color: rgba(245,242,236,0.6);
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.combobox-dropdown-btn:hover {
+  background: rgba(245,242,236,0.2);
+  color: #f5f2ec;
+}
+
+.combobox-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  display: none;
+  z-index: 1000;
+  box-shadow: var(--shadow);
+}
+
+.combobox-dropdown.show {
+  display: block;
+}
+
+.combobox-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  transition: background 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.combobox-item:last-child {
+  border-bottom: none;
+}
+
+.combobox-item:hover {
+  background-color: var(--bg);
+}
+
+.combobox-item.selected {
+  background-color: var(--accent-alt);
+  color: white;
+}
+
+.combobox-item .tag-count {
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.combobox-item.selected .tag-count {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
 </style>
 </head>
 <body>
@@ -949,15 +1068,20 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 <div id="user-screen" class="screen active">
   <!-- Top bar: search input + tag pills all in one line -->
   <div class="user-topbar">
-    <div class="user-topbar-search">
-      <input type="text" class="search-input" id="tag-search" placeholder="Naskenujte nebo napište tag…" autocomplete="off" autofocus>
-      <button class="btn btn-primary" onclick="doSearch()">Zobrazit</button>
+  <div class="user-topbar-search">
+    <div class="combobox-container">
+      <input type="text" class="search-input combobox-input" id="tag-combobox"
+             placeholder="Vyberte nebo napište/naskenujte tag…" autocomplete="off" autofocus>
+      <button class="combobox-dropdown-btn" onclick="toggleCombobox()">▼</button>
+      <div class="combobox-dropdown" id="combobox-dropdown"></div>
     </div>
-    <div class="topbar-divider"></div>
-    <div class="tag-cloud" id="tag-cloud">
-      <span class="tag-cloud-label">Tagy:</span>
-    </div>
+    <button class="btn btn-primary" onclick="doSearch()">Zobrazit</button>
   </div>
+  <div class="topbar-divider"></div>
+  <div class="tag-cloud" id="tag-cloud">
+    <span class="tag-cloud-label">Tagy:</span>
+  </div>
+</div>
 
   <!-- Active tag summary + clear -->
   <div class="active-tags-bar" id="active-tags-bar">
@@ -970,7 +1094,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   <!-- Body: doc list (left) + PDF viewer (right, full height) -->
   <div class="user-body">
     <div class="doc-list-panel" id="doc-list-panel">
-      <div id="doc-list"></div>
+      <div id="doc-list">
+  <div class="empty-state" id="no-tag-hint">
+    <div class="empty-icon">🏷</div>
+    <h3>Vyberte tag</h3>
+    <p>Zadejte nebo naskenujte tag pro zobrazení dokumentů</p>
+  </div>
+</div>
     </div>
     <div class="pdf-viewer-panel empty" id="pdf-viewer-panel">
       <div class="pdf-empty-hint">
@@ -1008,7 +1138,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
     <!-- RIGHT: Doc manager -->
     <div style="display:flex;flex-direction:column;gap:20px">
-
       <!-- Add/Edit form -->
       <div class="panel">
         <div class="panel-head">
@@ -1133,6 +1262,200 @@ let allTags = [];
 let allFavTags = new Set(); // names that are favourited
 let allDocs = [];
 let selectedDocIds = new Set();
+let activeTags = new Set();  // MOVED HERE - before combobox functions
+
+// ── COMBOBOX FUNCTIONALITY ────────────────────
+let comboboxSelectedValue = '';
+
+// Update combobox with tags from your JSON
+function populateComboboxFromTags(searchTerm = '') {
+  const dropdown = document.getElementById('combobox-dropdown');
+  if (!dropdown) return;
+
+  // Get tags from your existing allTags variable
+  const tags = allTags || [];
+
+  if (tags.length === 0) {
+    dropdown.innerHTML = '<div class="combobox-item" style="cursor:default;color:var(--muted)">Žádné tagy nejsou k dispozici</div>';
+    return;
+  }
+
+  // Filter tags based on search term
+  let filteredTags = tags;
+  if (searchTerm) {
+    filteredTags = tags.filter(tag =>
+      tag.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  // Sort tags alphabetically
+  filteredTags.sort((a, b) => a.localeCompare(b));
+
+  if (filteredTags.length === 0) {
+    dropdown.innerHTML = '<div class="combobox-item" style="cursor:default;color:var(--muted)">Nenalezeny žádné tagy</div>';
+    return;
+  }
+
+  // Create dropdown items
+  dropdown.innerHTML = filteredTags.map(tag => `
+    <div class="combobox-item" data-tag="${escapeHtml(tag)}" onclick="selectComboboxTag('${escapeHtml(tag)}')">
+      <span>${escapeHtml(tag)}</span>
+    </div>
+  `).join('');
+}
+
+// Select a tag from combobox
+function selectComboboxTag(tag) {
+  const input = document.getElementById('tag-combobox');
+  const dropdown = document.getElementById('combobox-dropdown');
+
+  input.value = tag;
+  comboboxSelectedValue = tag;
+  dropdown.classList.remove('show');
+
+  // Add the selected tag to activeTags
+  if (!activeTags.has(tag)) {
+    activeTags.add(tag);
+    renderTagCloud();
+    runSearch();
+  }
+
+  // Clear the input after selection
+  setTimeout(() => {
+    input.value = '';
+  }, 100);
+}
+
+// Toggle dropdown visibility
+function toggleCombobox() {
+  const dropdown = document.getElementById('combobox-dropdown');
+  const input = document.getElementById('tag-combobox');
+
+  if (dropdown.classList.contains('show')) {
+    dropdown.classList.remove('show');
+  } else {
+    // Close any other open dropdowns
+    if (typeof closeAllTagDropdowns === 'function') closeAllTagDropdowns();
+
+    // Refresh the list with current filter
+    const searchTerm = input.value;
+    populateComboboxFromTags(searchTerm);
+    dropdown.classList.add('show');
+  }
+}
+
+// Filter combobox items based on input
+function filterCombobox() {
+  const input = document.getElementById('tag-combobox');
+  const searchTerm = input.value;
+  const dropdown = document.getElementById('combobox-dropdown');
+
+  if (dropdown.classList.contains('show')) {
+    populateComboboxFromTags(searchTerm);
+  }
+}
+
+// Close dropdown when clicking outside
+function closeComboboxOnOutsideClick(event) {
+  const container = document.querySelector('.combobox-container');
+  const dropdown = document.getElementById('combobox-dropdown');
+
+  if (container && !container.contains(event.target) && dropdown) {
+    dropdown.classList.remove('show');
+  }
+}
+
+// Initialize combobox
+function initCombobox() {
+  const input = document.getElementById('tag-combobox');
+  if (!input) return;
+
+  // Add input event listener for filtering
+  input.addEventListener('input', filterCombobox);
+
+  // Add keyboard navigation
+  input.addEventListener('keydown', (e) => {
+    const dropdown = document.getElementById('combobox-dropdown');
+    const items = document.querySelectorAll('.combobox-item');
+    let currentIndex = -1;
+
+    items.forEach((item, index) => {
+      if (item.classList.contains('selected')) {
+        currentIndex = index;
+      }
+    });
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!dropdown.classList.contains('show')) {
+        dropdown.classList.add('show');
+        populateComboboxFromTags(input.value);
+      }
+      if (currentIndex < items.length - 1) {
+        if (currentIndex >= 0) items[currentIndex].classList.remove('selected');
+        if (items[currentIndex + 1]) {
+          items[currentIndex + 1].classList.add('selected');
+          items[currentIndex + 1].scrollIntoView({ block: 'nearest' });
+        }
+      } else if (items.length > 0 && currentIndex === -1) {
+        items[0].classList.add('selected');
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (currentIndex > 0) {
+        items[currentIndex].classList.remove('selected');
+        items[currentIndex - 1].classList.add('selected');
+        items[currentIndex - 1].scrollIntoView({ block: 'nearest' });
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (currentIndex >= 0 && items[currentIndex]) {
+        const tag = items[currentIndex].getAttribute('data-tag');
+        if (tag) selectComboboxTag(tag);
+      } else if (input.value.trim()) {
+        // Use substring matching logic for custom input
+        const val = input.value.trim().toUpperCase();
+        const matched = allTags.filter(t => val.includes(t.toUpperCase()));
+
+        if (matched.length > 0) {
+          matched.forEach(t => {
+            if (!activeTags.has(t)) {
+              activeTags.add(t);
+            }
+          });
+          renderTagCloud();
+          runSearch();
+        } else if (val) {
+          // Treat as custom tag
+          if (!activeTags.has(val)) {
+            activeTags.add(val);
+          }
+          renderTagCloud();
+          runSearch();
+        }
+        input.value = '';
+      }
+      dropdown.classList.remove('show');
+    } else if (e.key === 'Escape') {
+      dropdown.classList.remove('show');
+      input.blur();
+    }
+  });
+
+  // Add click outside listener
+  document.addEventListener('click', closeComboboxOnOutsideClick);
+}
+
+// Helper function to escape HTML
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
 
 // ── TOAST ──────────────────────────────────────
 function toast(msg, isErr = false) {
@@ -1194,13 +1517,12 @@ function showAdmin() {
 }
 
 // ── TAGS LOAD ──────────────────────────────────
-let activeTags = new Set();
-
 async function loadTags() {
   const raw = await api('GET', '/api/tags');
   allTags = raw.map(t => t.name);
   allFavTags = new Set(raw.filter(t => t.fav).map(t => t.name));
   renderTagCloud();
+  populateComboboxFromTags(); // Update combobox with tags
 }
 
 function renderTagCloud() {
@@ -1229,12 +1551,14 @@ function toggleTagPill(tag) {
 }
 
 // ── SEARCH ─────────────────────────────────────
-document.getElementById('tag-search').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
-
 function doSearch() {
-  const val = document.getElementById('tag-search').value.trim().toUpperCase();
-  if (!val) return;
-  document.getElementById('tag-search').value = '';
+  const input = document.getElementById('tag-combobox');
+  const val = input.value.trim().toUpperCase();
+
+  if (!val) {
+    toast('Prosím vyberte nebo napište tag', true);
+    return;
+  }
 
   // Substring match: find all known tags that appear anywhere inside the scanned value.
   // e.g. scanned "WIP-F00N211175-TW-STP" matches tag "F00N211175"
@@ -1249,6 +1573,14 @@ function doSearch() {
     activeTags.add(val);
   }
 
+  // Clear the input
+  input.value = '';
+
+  // Close dropdown if open
+  const dropdown = document.getElementById('combobox-dropdown');
+  if (dropdown) dropdown.classList.remove('show');
+
+  // Update UI and search
   renderTagCloud();
   runSearch();
 }
@@ -1331,9 +1663,14 @@ function showPdfHint() {
 function clearSearch() {
   activeTags.clear();
   openDocId = null;
-  document.getElementById('tag-search').value = '';
+  const combobox = document.getElementById('tag-combobox');
+  if (combobox) combobox.value = '';
   document.getElementById('active-tags-bar').classList.remove('visible');
-  document.getElementById('doc-list').innerHTML = '';
+  document.getElementById('doc-list').innerHTML = `<div class="empty-state" id="no-tag-hint">
+  <div class="empty-icon">🏷</div>
+  <h3>Vyberte tag</h3>
+  <p>Zadejte nebo naskenujte tag pro zobrazení dokumentů</p>
+</div>`;
   document.getElementById('doc-list-panel').classList.remove('has-open');
   showPdfHint();
   renderTagCloud();
@@ -1438,6 +1775,7 @@ async function createTag() {
     input.value = '';
     toast('Tag created: ' + name);
     loadAdminData();
+    populateComboboxFromTags(); // Update combobox with new tag
   } catch(e) { toast(e.message, true); }
 }
 
@@ -1447,6 +1785,7 @@ async function deleteTag(name) {
     await api('DELETE', `/api/tags/${encodeURIComponent(name)}`);
     toast('Tag deleted');
     loadAdminData();
+    populateComboboxFromTags(); // Update combobox after deletion
   } catch(e) { toast(e.message, true); }
 }
 
@@ -1887,7 +2226,16 @@ function esc(s) {
 }
 
 // ── INIT ───────────────────────────────────────
-loadTags();
+// Initialize combobox and load tags when page loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    loadTags();
+    initCombobox();
+  });
+} else {
+  loadTags();
+  initCombobox();
+}
 </script>
 </body>
 </html>
