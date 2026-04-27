@@ -1049,6 +1049,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   color: white;
 }
 
+.excel-link { display:flex; align-items:center; gap:10px; padding:12px 14px; background:rgba(33,115,70,0.08); border:1px solid rgba(33,115,70,0.25); border-radius:var(--radius); color:#1a6b3c; font-family:var(--mono); font-size:12px; cursor:pointer; transition:all 0.15s; user-select:none; }
+.excel-link:hover { background:rgba(33,115,70,0.15); border-color:rgba(33,115,70,0.5); }
+.excel-icon { font-size:20px; flex-shrink:0; }
+.excel-link-text { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+.excel-link-label { font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+.excel-link-path { font-size:10px; color:#2d7a4f; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+
 </style>
 </head>
 <body>
@@ -1134,7 +1142,26 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
           <div id="tag-list-admin"></div>
         </div>
       </div>
+<div class="panel" style="margin-top:20px">
+  <div class="panel-head">Soubory</div>
+  <div class="panel-body">
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Klikněte pro otevření v Excelu:</p>
+<!--    <a class="excel-link" href="ms-excel:ofv|u|\\fsczmc01\TEST_DOC_SCAN\Source\output.xlsx">-->
+    <a class="excel-link" href="ms-excel:ofv|u|file://///fsczmc01/TEST_DOC_SCAN/Source/output.xlsx">
+      <span class="excel-icon">📊</span>
+      <span class="excel-link-text">
+        <span class="excel-link-label">Excel tabulka</span>
+        <span class="excel-link-path">\\fsczmc01\TEST_DOC_SCAN\Source\output.xlsx</span>
+      </span>
+      <span style="font-size:10px;color:#2d7a4f;flex-shrink:0">↗ Otevřít</span>
+    </a>
+    <p style="font-size:10px;color:var(--muted);margin-top:8px">
+      Funguje v Edge a Chrome na Windows s nainstalovaným Excelem.
+    </p>
+  </div>
+</div>
     </div>
+
 
     <!-- RIGHT: Doc manager -->
     <div style="display:flex;flex-direction:column;gap:20px">
@@ -1444,6 +1471,13 @@ function initCombobox() {
 
   // Add click outside listener
   document.addEventListener('click', closeComboboxOnOutsideClick);
+}
+
+async function openExcelFile() {
+  try {
+    await api('POST', '/api/open-file', {});
+    toast('Soubor byl otevřen');
+  } catch(e) { toast('Chyba: ' + e.message, true); }
 }
 
 // Helper function to escape HTML
@@ -2050,8 +2084,10 @@ function editDoc(id) {
   document.getElementById('edit-banner').classList.add('visible');
   document.getElementById('cancel-btn').style.display = '';
   renderTagSelector(doc.tags);
-  document.getElementById('admin-screen').scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('form-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
 }
+
 
 function cancelEdit() {
   editingId = null;

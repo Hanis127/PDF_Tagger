@@ -15,6 +15,8 @@ app = Flask(__name__)
 ADMIN_PASSWORD = "admin123"               # Change this!
 DATA_FILE = Path("tags.json")             # Stored next to app.py
 SHARE_ROOT = r"\\fsczmc01\TEST_DOC_SCAN"  # Root of the file browser
+EXCEL_FILE = r"\\fsczmc01\TEST_DOC_SCAN\Source\output.xlsx"
+
 # ────────────────────────────────────────────────────────────────────────────
 
 
